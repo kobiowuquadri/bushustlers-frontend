@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bushustlers web app
 
-## Getting Started
+Next.js 16 (App Router, React 19, Tailwind 4) frontend for Bushustlers: the public website, merchant dashboard and buyer checkout. It talks only to the Bushustlers API (`../bushustler-backend`).
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local     # BACKEND_URL = the API, e.g. https://bushustlers-backend.onrender.com or http://localhost:5000
+pnpm dev                       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`/api/v1/*` is proxied to `BACKEND_URL` by a rewrite in `next.config.ts`, so the API's HttpOnly session cookies are first-party and no API host or secret appears in browser code. `BACKEND_URL` is read when `pnpm dev` starts and when `pnpm build` runs (rewrites are compiled into the build): restart/rebuild after changing it. The API must list this site's origin in its `CORS_ORIGIN`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Checks: `pnpm lint`, `npx tsc --noEmit`, `pnpm build`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What's where
 
-## Learn More
+- `app/page.tsx` — website (pricing comes from the API's fee configuration, revalidated hourly)
+- `app/(auth)/*`, `app/onboarding` — sign up/in, password reset, email confirmation, business setup
+- `app/dashboard/*` — Overview, Orders, Payment links, Transactions, Customers, Settlements, Settings
+- `app/pay/[linkId]` — buyer checkout (no account), `…/receipt` — printable receipt
+- `app/dev/mailbox` — development-only view of captured emails
+- `components/ui.tsx` — shared UI kit (buttons, fields, pills, notices, dialogs, toasts); tokens in `app/globals.css`
+- `lib/api.ts` — typed client (CSRF header, single-flight session refresh); `lib/types.ts` — API contracts; `lib/format.ts` — BigInt money formatting
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy (Vercel)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set `BACKEND_URL` in the project's environment variables (build-time), deploy, then add the site's URL to the API's `CORS_ORIGIN` and `FRONTEND_URL`. `proxy.ts` only redirects visitors without a session cookie away from `/dashboard`; the API enforces authentication on every request.
