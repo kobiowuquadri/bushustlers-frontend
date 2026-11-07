@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Bushustlers design tokens (from assets/Bushustlers-Brand-Kit/brand-tokens.css and the pitch deck palette).
+   Text colours are checked for WCAG AA on ivory and white: --color-muted is a slightly deeper version of the
+   brand muted (#61766D) because the original is 4.4:1 on ivory; mint is never used as text on light surfaces. */
+@theme {
+  --color-forest: #08281f;
+  --color-forest-2: #0f3a2d;
+  --color-forest-3: #174a3a;
+  --color-mint: #32e68a;
+  --color-mint-hover: #26cf79;
+  --color-mint-tint: #ddf5e6;
+  --color-success: #157a45;
+  --color-ivory: #f7f4ea;
+  --color-ivory-2: #efebdd;
+  --color-paper: #ffffff;
+  --color-ink: #122a23;
+  --color-muted: #566a61;
+  --color-subtle: #61766d;
+  --color-line: #dce2da;
+  --color-bubble: #edf1eb;
+  --color-amber-tint: #fbefd3;
+  --color-amber-ink: #7a5200;
+  --color-amber-dot: #e09a1b;
+  --color-red-tint: #fbe3e1;
+  --color-red-ink: #9e2f28;
+  --color-red-dot: #e5574f;
+  --color-sky-tint: #e4eef8;
+  --color-sky-ink: #1d4e7a;
+  --color-sky-dot: #3b82c4;
+  --color-on-dark: #d3e0d8;
+  --color-on-dark-muted: #a9c2b5;
+  --color-hair-dark: #24493b;
+
+  --font-sans: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+
+  --radius-card: 24px;
+  --radius-control: 12px;
+  --shadow-card: 0 1px 2px rgb(8 40 31 / 0.04), 0 8px 24px rgb(8 40 31 / 0.05);
+  --shadow-pop: 0 12px 40px rgb(8 40 31 / 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-ivory);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .on-dark :focus-visible {
+    outline-color: var(--color-mint);
+  }
+  ::selection {
+    background: var(--color-mint-tint);
+    color: var(--color-forest);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }
