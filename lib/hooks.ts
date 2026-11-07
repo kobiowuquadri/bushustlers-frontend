@@ -19,13 +19,13 @@ export const useNow = (intervalMs = 1000) => {
   return now;
 };
 
-// Bounded polling: refresh every `everyMs` until `active` is false or `maxMs` has passed since it started
+// Bounded polling: refresh every `everyMs` while `active`, stopping for good after `maxMs`
 export const useBoundedPolling = (active: boolean, everyMs: number, maxMs: number) => {
-  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
-    if (active && startedAt === null) setStartedAt(Date.now());
-    if (!active && startedAt !== null) setStartedAt(null);
-  }, [active, startedAt]);
-  if (!active || startedAt === null) return false as const;
-  return Date.now() - startedAt > maxMs ? (false as const) : everyMs;
+    if (!active) return;
+    const timer = setTimeout(() => setTimedOut(true), maxMs);
+    return () => clearTimeout(timer);
+  }, [active, maxMs]);
+  return active && !timedOut ? everyMs : (false as const);
 };

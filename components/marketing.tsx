@@ -86,7 +86,7 @@ export function MarketingFooter({ supportEmail }: { supportEmail?: string | null
       </div>
       <div className="border-t border-hair-dark">
         <p className="mx-auto max-w-6xl px-4 py-5 text-xs text-on-dark-muted sm:px-6">
-          © {new Date().getFullYear()} Bushustlers. Payments are collected through Busha. Bushustlers is in a pilot and is not yet processing live payments.
+          © 2026 Bushustlers. Payments are collected through Busha. Bushustlers is in a pilot and is not yet processing live payments.
         </p>
       </div>
     </footer>

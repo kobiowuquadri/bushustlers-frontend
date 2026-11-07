@@ -68,7 +68,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const me = useMe();
   const ready = Boolean(me.data?.onboardingComplete);
   const business = useBusiness(ready);
-  const [menuOpen, setMenuOpen] = useState(false);
+  // The drawer remembers the page it was opened on, so navigating anywhere closes it
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const menuOpen = menuPath === pathname;
+  const setMenuOpen = (open: boolean) => setMenuPath(open ? pathname : null);
 
   useEffect(() => {
     if (me.error instanceof ApiError && me.error.status === 401) {
@@ -77,8 +80,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       router.replace("/onboarding");
     }
   }, [me.error, me.data, pathname, router]);
-
-  useEffect(() => setMenuOpen(false), [pathname]);
 
   const signOut = useMutation({
     mutationFn: () => api("/auth/logout", { method: "POST" }),

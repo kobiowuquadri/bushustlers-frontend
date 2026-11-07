@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeft, Building2, CheckCircle2, ChevronDown, Clock, Coins, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { api, ApiError, newIdempotencyKey } from "@/lib/api";
@@ -317,7 +317,9 @@ function MethodOption({ checked, onSelect, icon, title, description }: { checked
 
 function PaymentPanel({ payment, checkout, linkId, polling, onUpdated, onChangeMethod }: { payment: BuyerPayment; checkout: Checkout; linkId: string; polling: boolean; onUpdated: (checkout: Checkout) => void; onChangeMethod: () => void }) {
   const now = useNow();
-  const [notice, setNotice] = useState<{ tone: "warning" | "info"; text: string } | null>(null);
+  const [noticeState, setNotice] = useState<{ tone: "warning" | "info"; text: string; status?: string } | null>(null);
+  // A notice only applies to the status it was written for
+  const notice = noticeState && (!noticeState.status || noticeState.status === payment.status) ? noticeState : null;
   const [cooldownUntil, setCooldownUntil] = useState(0);
 
   const refresh = useMutation({
@@ -325,12 +327,10 @@ function PaymentPanel({ payment, checkout, linkId, polling, onUpdated, onChangeM
     onMutate: () => setCooldownUntil(Date.now() + 10_000),
     onSuccess: (data) => {
       onUpdated(data.checkout);
-      setNotice(data.payment.status === payment.status && ACTIVE.has(data.payment.status) ? { tone: "info", text: "No change yet. The provider hasn't reported this payment." } : null);
+      setNotice(data.payment.status === payment.status && ACTIVE.has(data.payment.status) ? { tone: "info", text: "No change yet. The provider hasn't reported this payment.", status: payment.status } : null);
     },
-    onError: (err) => setNotice({ tone: "warning", text: err instanceof ApiError ? err.message : "Couldn't check right now. Please try again shortly." }),
+    onError: (err) => setNotice({ tone: "warning", text: err instanceof ApiError ? err.message : "Couldn't check right now. Please try again shortly.", status: payment.status }),
   });
-
-  useEffect(() => setNotice(null), [payment.status]);
 
   const instructions = payment.instructions;
   const expiresAt = instructions?.kind === "stablecoin" ? instructions.quoteExpiresAt : instructions?.expiresAt ?? payment.expiresAt;

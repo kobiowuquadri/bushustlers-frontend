@@ -38,17 +38,27 @@ const suggestPrefix = (name: string) => {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const me = useMe();
-  const [form, setForm] = useState({ ownerName: "", businessName: "", category: "fashion", phone: "", orderPrefix: "" });
+  useEffect(() => {
+    if (me.data?.onboardingComplete) router.replace("/dashboard");
+  }, [me.data, router]);
+  if (me.isPending || !me.data || me.data.onboardingComplete) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <Spinner />
+      </div>
+    );
+  }
+  return <OnboardingForm initialName={me.data.user.fullName ?? ""} />;
+}
+
+function OnboardingForm({ initialName }: { initialName: string }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ ownerName: initialName, businessName: "", category: "fashion", phone: "", orderPrefix: "" });
   const [prefixTouched, setPrefixTouched] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (me.data?.onboardingComplete) router.replace("/dashboard");
-    if (me.data && !form.ownerName && me.data.user.fullName) setForm((f) => ({ ...f, ownerName: me.data!.user.fullName || "" }));
-  }, [me.data, router, form.ownerName]);
 
   const prefix = prefixTouched ? form.orderPrefix : suggestPrefix(form.businessName);
 
@@ -80,14 +90,6 @@ export default function OnboardingPage() {
     setErrors(next);
     if (!Object.keys(next).length) create.mutate();
   };
-
-  if (me.isPending) {
-    return (
-      <div className="grid min-h-screen place-items-center">
-        <Spinner />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-ivory">

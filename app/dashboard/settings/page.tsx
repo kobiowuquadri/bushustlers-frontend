@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { useBusiness, useMe } from "@/lib/hooks";
 import { MODE_LABEL } from "@/lib/status";
+import type { BusinessResponse, Me } from "@/lib/types";
 import { Button, Card, CardHeader, ErrorState, Field, Input, Notice, PageHeader, PageSkeleton, Pill, Row, Select, Toggle, useToast } from "@/components/ui";
 
 const PASSWORD_RULE = "8+ characters with an uppercase letter, a lowercase letter, a number and a symbol.";
@@ -12,24 +13,21 @@ const PASSWORD_RULE = "8+ characters with an uppercase letter, a lowercase lette
 export default function SettingsPage() {
   const me = useMe();
   const business = useBusiness();
+  if (business.isPending || me.isPending || !me.data) return <PageSkeleton />;
+  if (business.isError) return <ErrorState error={business.error} onRetry={() => business.refetch()} />;
+  return <SettingsView me={me.data} data={business.data} />;
+}
+
+// Rendered once the data is loaded, so form state starts from the saved values
+function SettingsView({ me, data }: { me: Me; data: BusinessResponse }) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const [profile, setProfile] = useState({ businessName: "", category: "", phone: "", orderPrefix: "" });
-  const [ownerName, setOwnerName] = useState("");
+  const [profile, setProfile] = useState({ businessName: data.business.name, category: data.business.category, phone: data.business.phone ?? "", orderPrefix: data.business.orderPrefix });
+  const [ownerName, setOwnerName] = useState(me.user.fullName ?? "");
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "" });
   const [profileError, setProfileError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (business.data) {
-      const b = business.data.business;
-      setProfile({ businessName: b.name, category: b.category, phone: b.phone ?? "", orderPrefix: b.orderPrefix });
-    }
-  }, [business.data]);
-  useEffect(() => {
-    if (me.data) setOwnerName(me.data.user.fullName ?? "");
-  }, [me.data]);
 
   const saveBusiness = useMutation({
     mutationFn: (body: Record<string, unknown>) => api("/business", { method: "PATCH", body }),
@@ -61,9 +59,7 @@ export default function SettingsPage() {
     onSuccess: () => toast.show({ tone: "success", title: "Other devices signed out" }),
   });
 
-  if (business.isPending || me.isPending) return <PageSkeleton />;
-  if (business.isError) return <ErrorState error={business.error} onRetry={() => business.refetch()} />;
-  const { business: b, environment: env, categories } = business.data;
+  const { business: b, environment: env, categories } = data;
 
   const submitProfile = (event: FormEvent) => {
     event.preventDefault();
@@ -115,8 +111,8 @@ export default function SettingsPage() {
                 </div>
               </Field>
               <dl className="divide-y divide-line">
-                <Row label="Email">{me.data?.user.email}</Row>
-                <Row label="Email status">{me.data?.user.emailVerified ? <Pill tone="success">Confirmed</Pill> : <Pill tone="warning">Not confirmed</Pill>}</Row>
+                <Row label="Email">{me.user.email}</Row>
+                <Row label="Email status">{me.user.emailVerified ? <Pill tone="success">Confirmed</Pill> : <Pill tone="warning">Not confirmed</Pill>}</Row>
               </dl>
             </div>
           </Card>
