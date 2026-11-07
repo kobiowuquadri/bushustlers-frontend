@@ -18,14 +18,3 @@ export const useNow = (intervalMs = 1000) => {
   }, [intervalMs]);
   return now;
 };
-
-// Bounded polling: refresh every `everyMs` while `active`, stopping for good after `maxMs`
-export const useBoundedPolling = (active: boolean, everyMs: number, maxMs: number) => {
-  const [timedOut, setTimedOut] = useState(false);
-  useEffect(() => {
-    if (!active) return;
-    const timer = setTimeout(() => setTimedOut(true), maxMs);
-    return () => clearTimeout(timer);
-  }, [active, maxMs]);
-  return active && !timedOut ? everyMs : (false as const);
-};

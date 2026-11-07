@@ -46,20 +46,6 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
   );
 }
 
-function ModeBanner({ mode }: { mode?: string }) {
-  if (mode === "demo") {
-    return (
-      <div className="bg-amber-tint px-4 py-2 text-center text-sm font-medium text-amber-ink">
-        Demo mode: payment instructions and confirmations are simulated. No real money moves.
-      </div>
-    );
-  }
-  if (mode === "sandbox") {
-    return <div className="bg-sky-tint px-4 py-2 text-center text-sm font-medium text-sky-ink">Busha sandbox: test payments only. No real money moves.</div>;
-  }
-  return null;
-}
-
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -114,7 +100,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const user = me.data!.user;
   const businessName = business.data?.business.name ?? me.data!.business?.name ?? "";
-  const mode = business.data?.environment.payments.mode;
 
   const sidebarFooter = (
     <div className="mt-auto border-t border-hair-dark pt-4">
@@ -159,7 +144,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : null}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <ModeBanner mode={mode} />
           <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line/80 bg-ivory/90 px-4 backdrop-blur sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 lg:hidden">
               <button type="button" onClick={() => setMenuOpen(true)} className="rounded-lg p-2 text-ink hover:bg-paper" aria-label="Open menu" aria-expanded={menuOpen}>

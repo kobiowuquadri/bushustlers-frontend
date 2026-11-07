@@ -17,7 +17,6 @@ function ReceiptView() {
   if (receipt.isPending) return <div className="grid place-items-center py-24"><Spinner label="Loading receipt" /></div>;
   if (receipt.isError) return <Card><ErrorState error={receipt.error} /></Card>;
   const r = receipt.data;
-  const testMode = r.payments.some((p) => p.mode !== "production");
 
   return (
     <Card className="p-6 sm:p-8 print:border-0 print:shadow-none">
@@ -29,7 +28,6 @@ function ReceiptView() {
         </div>
         <Pill tone="success">Paid</Pill>
       </div>
-      {testMode ? <p className="mt-4 rounded-xl bg-amber-tint px-3 py-2 text-sm text-amber-ink">Test receipt: this payment was made in {r.payments[0]?.mode === "demo" ? "demo" : "sandbox"} mode. No real money moved.</p> : null}
 
       <div className="mt-6 flex items-center gap-3 rounded-2xl bg-mint-tint px-4 py-3 text-forest">
         <CheckCircle2 className="size-6 shrink-0" aria-hidden />

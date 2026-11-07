@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, FileText, FlaskConical, Pencil, Truck, PackageCheck } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { useBoundedPolling, useBusiness } from "@/lib/hooks";
+import { useBusiness } from "@/lib/hooks";
 import { formatAsset, formatDateTime, formatNaira, formatRelative } from "@/lib/format";
 import { ATTEMPT_STATUS, FULFILMENT_STATUS, orderPaymentMeta } from "@/lib/status";
 import type { OrderDetail, Transaction } from "@/lib/types";
@@ -32,15 +32,18 @@ export function OrderDetailView() {
   const [expiresInHours, setExpiresInHours] = useState("72");
   const [fulfilmentNote, setFulfilmentNote] = useState("");
 
-  const [watching, setWatching] = useState(true);
+  // Poll while the order is waiting on a payment, for at most 20 minutes after the page opened.
+  // The interval is derived from the query's own data inside the callback (React Query calls it while
+  // constructing the observer, so it must not read variables declared later in this component).
+  const [pollUntil, setPollUntil] = useState(() => Date.now() + 20 * 60_000);
+  const isAwaiting = (o?: OrderDetail) => Boolean(o && o.status === "open" && (o.paymentStatus === "unpaid" || o.paymentStatus === "processing"));
   const orderQuery = useQuery({
     queryKey: ["order", id],
     queryFn: () => api<{ order: OrderDetail }>(`/orders/${id}`).then((r) => r.order),
-    refetchInterval: () => pollInterval,
+    refetchInterval: (query) => (isAwaiting(query.state.data) && Date.now() < pollUntil ? 5_000 : false),
   });
   const order = orderQuery.data;
-  const awaitingActivity = Boolean(order && order.status === "open" && (order.paymentStatus === "unpaid" || order.paymentStatus === "processing"));
-  const pollInterval = useBoundedPolling(awaitingActivity && watching, 5_000, 20 * 60_000);
+  const awaitingActivity = isAwaiting(order);
 
   const refreshAll = () => {
     queryClient.invalidateQueries({ queryKey: ["order", id] });
@@ -56,7 +59,7 @@ export function OrderDetailView() {
     mutationFn: () => api(`/orders/${id}/links`, { method: "POST", body: { expiresInHours: Number(expiresInHours) } }),
     onSuccess: () => {
       refreshAll();
-      setWatching(true);
+      setPollUntil(Date.now() + 20 * 60_000);
       toast.show({ tone: "success", title: "Payment link ready", description: "Copy it or share it on WhatsApp." });
     },
     onError: onError("Couldn't create the link"),
@@ -133,7 +136,7 @@ export function OrderDetailView() {
       {safe ? (
         <Notice tone={safe.tone} title={safe.title} className="mb-6">
           {safe.body}
-          {awaitingActivity && !pollInterval ? (
+          {awaitingActivity ? (
             <button type="button" className="ml-1 font-semibold underline underline-offset-2" onClick={() => orderQuery.refetch()}>
               Refresh status
             </button>

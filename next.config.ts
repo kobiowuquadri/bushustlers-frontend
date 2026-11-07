@@ -13,9 +13,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Cache Components / Partial Prefetching (template defaults) are off: in 16.4.5 their client-resume path
-  // failed for the client-rendered dynamic routes (/pay/[linkId], /dashboard/orders/[id]) in production builds.
-  // Dynamic routes render on demand instead; the landing page revalidates pricing hourly.
+  // Cache Components / Partial Prefetching (template defaults) are off: the app's data is client-fetched per
+  // user, so dynamic routes simply render on demand. The landing page revalidates pricing hourly.
   poweredByHeader: false,
   // Brand images are already web-optimised; this avoids depending on sharp at runtime
   images: { unoptimized: true },

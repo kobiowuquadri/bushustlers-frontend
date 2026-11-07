@@ -6,12 +6,12 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeft, Building2, CheckCircle2, ChevronDown, Clock, Coins, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { api, ApiError, newIdempotencyKey } from "@/lib/api";
-import { useBoundedPolling, useNow } from "@/lib/hooks";
+import { useNow } from "@/lib/hooks";
 import { formatAsset, formatCountdown, formatDateTime, formatNaira, formatRelative } from "@/lib/format";
 import type { BankInstructions, BuyerPayment, Checkout, StablecoinInstructions } from "@/lib/types";
 import { LogoOnPanel } from "@/components/brand";
 import { QrCodeImage } from "@/components/share-link";
-import { Button, ButtonLink, Card, cn, CopyButton, ErrorState, Field, Input, Notice, Pill } from "@/components/ui";
+import { Button, ButtonLink, Card, cn, CopyButton, ErrorState, Field, Input, Notice } from "@/components/ui";
 
 const ACTIVE = new Set(["creating", "awaiting_payment", "processing"]);
 
@@ -22,10 +22,17 @@ export function CheckoutView() {
   const [choosing, setChoosing] = useState(false);
   const [providerDown, setProviderDown] = useState<string | null>(null);
 
+  // Poll while a payment is in progress (bounded to 30 minutes). Derived from the query's own data inside
+  // the callback, which React Query may call during the first render.
+  const [pollUntil] = useState(() => Date.now() + 30 * 60_000);
   const checkoutQuery = useQuery({
     queryKey: ["checkout", linkId],
     queryFn: () => api<{ checkout: Checkout }>(`/checkout/${linkId}`).then((r) => r.checkout),
-    refetchInterval: () => poll,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      const active = Boolean(data && data.order.paymentStatus !== "paid" && data.payments.some((p) => ACTIVE.has(p.status)));
+      return active && Date.now() < pollUntil ? 4_000 : false;
+    },
     refetchOnWindowFocus: true,
   });
   const checkout = checkoutQuery.data;
@@ -39,7 +46,6 @@ export function CheckoutView() {
 
   const paid = checkout?.order.paymentStatus === "paid";
   const inProgress = Boolean(current && ACTIVE.has(current.status)) && !paid;
-  const poll = useBoundedPolling(inProgress, 4_000, 30 * 60_000);
 
   const setCheckout = (next: Checkout) => queryClient.setQueryData(["checkout", linkId], next);
 
@@ -66,18 +72,9 @@ export function CheckoutView() {
   const showPicker = !paid && !linkClosed && (choosing || !current || ["failed", "expired", "cancelled"].includes(current.status));
 
   return (
-    <Shell mode={checkout.mode}>
+    <Shell>
       <OrderSummary checkout={checkout} />
 
-      {checkout.mode === "demo" ? (
-        <Notice tone="warning" title="Demo checkout" className="mt-4">
-          This is a demonstration. Payment details shown here are not real and no money should be sent.
-        </Notice>
-      ) : checkout.mode === "sandbox" ? (
-        <Notice tone="info" title="Test checkout (Busha sandbox)" className="mt-4">
-          Use sandbox test funds only. Do not send real money.
-        </Notice>
-      ) : null}
 
       <div className="mt-4">
         {paid ? (
@@ -108,7 +105,7 @@ export function CheckoutView() {
             payment={current}
             checkout={checkout}
             linkId={linkId}
-            polling={Boolean(poll)}
+            polling={inProgress}
             onUpdated={setCheckout}
             onChangeMethod={() => setChoosing(true)}
           />
@@ -123,12 +120,11 @@ export function CheckoutView() {
   );
 }
 
-function Shell({ children, mode }: { children: React.ReactNode; mode?: string }) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-ivory">
       <header className="mx-auto flex max-w-xl items-center justify-between px-4 pt-5">
         <LogoOnPanel height={20} />
-        {mode && mode !== "production" ? <Pill tone={mode === "demo" ? "warning" : "info"}>{mode === "demo" ? "Demo" : "Sandbox"}</Pill> : null}
       </header>
       <main className="mx-auto max-w-xl px-4 pb-12 pt-5">{children}</main>
     </div>
