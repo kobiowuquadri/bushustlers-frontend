@@ -235,7 +235,7 @@ function MethodPicker({
           </Notice>
         ) : null}
         {providerDown ? (
-          <Notice tone="warning" title="Payment provider temporarily unavailable" className="mb-4">
+          <Notice tone="warning" title="Payment setup could not be completed" className="mb-4">
             {providerDown} Nothing was charged.
           </Notice>
         ) : null}
