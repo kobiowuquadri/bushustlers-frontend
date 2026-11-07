@@ -81,7 +81,7 @@ function SettingsView({ me, data }: { me: Me; data: BusinessResponse }) {
   return (
     <>
       <PageHeader title="Settings" description="Your business profile, account, security and payment environment." />
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
           <CardHeader title="Business profile" description="Shown to buyers on checkout and receipts." />
           <form onSubmit={submitProfile} className="space-y-4 p-5 sm:p-6" noValidate>

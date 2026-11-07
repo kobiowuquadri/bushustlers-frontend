@@ -149,7 +149,7 @@ export function OrderDetailView() {
         </Notice>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="space-y-6">
           <Card>
             <CardHeader title="Items" />

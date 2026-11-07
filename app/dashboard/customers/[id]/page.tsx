@@ -42,7 +42,7 @@ function CustomerView() {
   return (
     <>
       <PageHeader back={{ href: "/dashboard/customers", label: "Customers" }} title={customer.name} description={`${customer.orderCount ?? orders.length} orders · ${formatNaira(customer.totalPaidMinor ?? "0")} verified paid`} />
-      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
         <Card className="p-5 sm:p-6">
           <h2 className="text-base font-semibold">Contact</h2>
           {form ? (

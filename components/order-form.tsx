@@ -117,7 +117,7 @@ export function OrderForm({ order }: { order?: OrderDetail }) {
   const describedBy = (id: string) => (errors[id] ? `${id}-error` : undefined);
 
   return (
-    <form onSubmit={submit(true)} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+    <form onSubmit={submit(true)} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <div className="space-y-6">
         <Card>
           <CardHeader title="Customer" description="Who is this order for? We'll save them to your customers." />

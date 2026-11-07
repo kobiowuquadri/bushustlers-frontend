@@ -111,14 +111,14 @@ export default function OverviewPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Metric tone="forest" label="Confirmed payments" value={formatNaira(o.confirmedVolumeMinor)} detail={`${o.confirmedPaymentCount} verified in the last ${periodLabel}`} href="/dashboard/transactions?status=confirmed" />
             <Metric tone="amber" label="Awaiting payment" value={String(o.awaitingPayment.count)} detail={`${formatNaira(o.awaitingPayment.valueMinor)} in open links · don't ship yet`} href="/dashboard/orders?view=awaiting_payment" />
             <Metric tone="mint" label="Paid, ready to fulfil" value={String(o.paidAwaitingFulfilment)} detail="Safe to ship" href="/dashboard/orders?view=to_fulfil" />
             <Metric tone="red" label="Needs review" value={String(o.needsReview)} detail="Hold these before shipping" href="/dashboard/orders?view=needs_review" />
           </div>
 
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <section className="border border-line/70 bg-paper" aria-labelledby="recent-title">
               <div className="flex items-center justify-between gap-3 px-5 pt-5 sm:px-6">
                 <h2 id="recent-title" className="text-base font-semibold">Recent payments</h2>

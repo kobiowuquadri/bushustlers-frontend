@@ -86,7 +86,7 @@ function TransactionView() {
         {t.lastCheckedAt ? <span className="block text-xs opacity-80">Last checked with the provider {formatRelative(t.lastCheckedAt)}.</span> : null}
       </Notice>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="space-y-6">
           {t.actions.canResolve ? (
             <Card>

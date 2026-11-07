@@ -379,7 +379,7 @@ function PaymentPanel({ payment, checkout, linkId, polling, onUpdated, onChangeM
         {notice ? <Notice tone={notice.tone} className="mt-5">{notice.text}</Notice> : null}
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-          <Button variant="dark" className="flex-1" onClick={() => refresh.mutate()} loading={refresh.isPending} disabled={coolingDown && !refresh.isPending} icon={<RefreshCw className="size-4" aria-hidden />}>
+          <Button variant="dark" className="sm:flex-1" onClick={() => refresh.mutate()} loading={refresh.isPending} disabled={coolingDown && !refresh.isPending} icon={<RefreshCw className="size-4" aria-hidden />}>
             I&apos;ve paid — check payment status
           </Button>
           <Button variant="secondary" onClick={onChangeMethod} icon={<ArrowLeft className="size-4" aria-hidden />}>
@@ -416,11 +416,6 @@ function BankDetails({ instructions, reference }: { instructions: BankInstructio
     <div>
       <h2 className="text-lg font-semibold">Transfer exactly {formatNaira(amountMinor)}</h2>
       <p className="mt-1 text-sm text-muted">Send one transfer for the full amount to this one-time account. It is only for order {reference}.</p>
-      {instructions.demo ? (
-        <Notice tone="warning" className="mt-4">
-          Demo details: this is not a real bank account. Do not send money.
-        </Notice>
-      ) : null}
       <div className="mt-4 divide-y divide-line rounded-2xl border border-line px-4">
         <DetailRow label="Amount" value={formatNaira(amountMinor)} copy={instructions.amount} large />
         <DetailRow label="Account number" value={instructions.accountNumber} copy={instructions.accountNumber} mono />
@@ -449,11 +444,6 @@ function StablecoinDetails({ instructions, payment }: { instructions: Stablecoin
           Send only <strong>{instructions.asset}</strong> on the <strong>{instructions.networkLabel}</strong> network. Funds sent with another asset or network may be lost.
         </p>
       </div>
-      {instructions.demo ? (
-        <Notice tone="warning" className="mt-3">
-          Demo details: this address is not a real wallet and the rate is a demo rate, not a market quote. Do not send funds.
-        </Notice>
-      ) : null}
       <div className="mt-4 divide-y divide-line rounded-2xl border border-line px-4">
         <DetailRow label="Amount" value={formatAsset(instructions.amount, instructions.asset)} copy={instructions.amount} large />
         <DetailRow label="Network" value={instructions.networkLabel} />
