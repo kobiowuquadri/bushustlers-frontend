@@ -65,7 +65,10 @@ export default function OverviewPage() {
             Create payment link
           </ButtonLink>
         </div>
-        <Tabs label="Period" onDark tabs={PERIODS.map((p) => ({ value: p.value, label: p.label }))} value={period} onChange={setPeriod} />
+        {/* Dark pill keeps the switcher legible over the bright ribbon artwork */}
+        <div className="w-fit rounded-full bg-forest/90 p-1 pb-0 backdrop-blur-sm">
+          <Tabs label="Period" onDark tabs={PERIODS.map((p) => ({ value: p.value, label: p.label }))} value={period} onChange={setPeriod} />
+        </div>
       </div>
     </section>
   );
