@@ -419,7 +419,9 @@ export function Row({ label, children, className }: { label: ReactNode; children
   );
 }
 
-export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs: { value: T; label: string; count?: number }[]; value: T; onChange: (value: T) => void; label: string }) {
+export function Tabs<T extends string>({ tabs, value, onChange, label, onDark }: { tabs: { value: T; label: string; count?: number }[]; value: T; onChange: (value: T) => void; label: string; onDark?: boolean }) {
+  const active = onDark ? "bg-mint text-forest" : "bg-forest text-white";
+  const idle = onDark ? "text-on-dark hover:bg-forest-2 hover:text-white" : "text-muted hover:bg-paper hover:text-ink";
   return (
     <div className="-mx-1 overflow-x-auto pb-1" role="tablist" aria-label={label}>
       <div className="flex min-w-max gap-1 px-1">
@@ -430,7 +432,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs:
             role="tab"
             aria-selected={tab.value === value}
             onClick={() => onChange(tab.value)}
-            className={cn("rounded-full px-3.5 py-2 text-sm font-semibold transition-colors", tab.value === value ? "bg-forest text-white" : "text-muted hover:bg-paper hover:text-ink")}
+            className={cn("rounded-full px-3.5 py-2 text-sm font-semibold transition-colors", tab.value === value ? active : idle)}
           >
             {tab.label}
             {tab.count !== undefined ? <span className="ml-1.5 opacity-70">{tab.count}</span> : null}

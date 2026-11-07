@@ -1,15 +1,17 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Plus, ShoppingBag } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { useMe } from "@/lib/hooks";
 import { formatNaira, formatRelative } from "@/lib/format";
 import { ATTEMPT_STATUS } from "@/lib/status";
 import type { Overview } from "@/lib/types";
-import { ButtonLink, Card, CardHeader, EmptyState, ErrorState, PageHeader, PageSkeleton, StatusPill, Tabs } from "@/components/ui";
+import { ButtonLink, EmptyState, ErrorState, PageSkeleton, StatusPill, Tabs } from "@/components/ui";
 
 const PERIODS = [
   { value: "7d", label: "7 days" },
@@ -17,23 +19,27 @@ const PERIODS = [
   { value: "90d", label: "90 days" },
 ] as const;
 
-function Metric({ label, value, detail, href, tone = "default" }: { label: string; value: string; detail?: string; href?: string; tone?: "default" | "alert" }) {
-  const body = (
-    <>
-      <p className="text-sm font-medium text-muted">{label}</p>
-      <p className={`tabular mt-2 text-2xl font-bold tracking-tight sm:text-[28px] ${tone === "alert" ? "text-red-ink" : "text-ink"}`}>{value}</p>
-      {detail ? <p className="mt-1 text-sm text-muted">{detail}</p> : null}
-    </>
-  );
-  return href ? (
-    <Link href={href} className="group rounded-card border border-line/70 bg-paper p-5 shadow-card transition-colors hover:border-forest/30">
-      {body}
-      <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-ink opacity-80 group-hover:opacity-100">
-        View <ArrowRight className="size-3.5" aria-hidden />
+// Sharp-edged, colour-coded metric tiles. Each colour carries the status meaning used everywhere else:
+// forest = verified money, amber = don't ship yet, mint = safe to ship, red = hold for review.
+const TILE = {
+  forest: { box: "bg-forest text-white", label: "text-on-dark-muted", detail: "text-on-dark", link: "text-mint" },
+  amber: { box: "bg-amber-tint text-amber-ink", label: "text-amber-ink/80", detail: "text-amber-ink/90", link: "text-amber-ink" },
+  mint: { box: "bg-mint-tint text-forest", label: "text-forest/75", detail: "text-forest/85", link: "text-forest" },
+  red: { box: "bg-red-tint text-red-ink", label: "text-red-ink/80", detail: "text-red-ink/90", link: "text-red-ink" },
+  sky: { box: "bg-sky-tint text-sky-ink", label: "text-sky-ink/80", detail: "text-sky-ink/90", link: "text-sky-ink" },
+} as const;
+
+function Metric({ label, value, detail, href, tone }: { label: string; value: string; detail?: string; href: string; tone: keyof typeof TILE }) {
+  const t = TILE[tone];
+  return (
+    <Link href={href} className={cn("group flex min-h-40 flex-col p-5 transition-[filter] hover:brightness-[0.97] focus-visible:rounded-none sm:p-6", t.box)}>
+      <p className={cn("text-sm font-semibold", t.label)}>{label}</p>
+      <p className="tabular mt-3 text-3xl font-bold tracking-tight">{value}</p>
+      {detail ? <p className={cn("mt-1 text-sm", t.detail)}>{detail}</p> : null}
+      <span className={cn("mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold", t.link)}>
+        View <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
       </span>
     </Link>
-  ) : (
-    <div className="rounded-card border border-line/70 bg-paper p-5 shadow-card">{body}</div>
   );
 }
 
@@ -41,23 +47,54 @@ export default function OverviewPage() {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]["value"]>("30d");
   const me = useMe();
   const overview = useQuery({ queryKey: ["overview", period], queryFn: () => api<Overview>(`/overview?period=${period}`), refetchInterval: 30_000 });
-
-  if (overview.isPending) return <PageSkeleton />;
-  if (overview.isError) return <ErrorState error={overview.error} onRetry={() => overview.refetch()} />;
-  const o = overview.data;
   const firstName = me.data?.user.fullName?.split(" ")[0];
+
+  const banner = (
+    <section className="on-dark relative mb-6 overflow-hidden bg-forest" aria-labelledby="overview-title">
+      {/* Decorative brand artwork; text sits on its own layer */}
+      <Image src="/brand/banner.webp" alt="" fill priority sizes="100vw" className="object-cover object-right" />
+      <div className="absolute inset-0 bg-gradient-to-r from-forest via-forest/85 to-forest/10" aria-hidden />
+      <div className="relative flex flex-col gap-6 px-6 py-8 sm:px-8 sm:py-10 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-xl">
+          <p className="text-sm font-semibold text-mint">{me.data?.business?.name ?? "Overview"}</p>
+          <h1 id="overview-title" className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            {firstName ? `Welcome back, ${firstName}` : "Overview"}
+          </h1>
+          <p className="mt-2 text-on-dark">What&apos;s paid, what&apos;s waiting, and what needs you.</p>
+          <ButtonLink href="/dashboard/orders/new" className="mt-5" icon={<Plus className="size-4" aria-hidden />}>
+            Create payment link
+          </ButtonLink>
+        </div>
+        <Tabs label="Period" onDark tabs={PERIODS.map((p) => ({ value: p.value, label: p.label }))} value={period} onChange={setPeriod} />
+      </div>
+    </section>
+  );
+
+  if (overview.isPending) {
+    return (
+      <>
+        {banner}
+        <PageSkeleton />
+      </>
+    );
+  }
+  if (overview.isError) {
+    return (
+      <>
+        {banner}
+        <ErrorState error={overview.error} onRetry={() => overview.refetch()} />
+      </>
+    );
+  }
+  const o = overview.data;
   const isEmpty = o.confirmedPaymentCount === 0 && o.awaitingPayment.count === 0 && o.recentTransactions.length === 0 && o.paidAwaitingFulfilment === 0;
+  const periodLabel = PERIODS.find((p) => p.value === period)?.label;
 
   return (
     <>
-      <PageHeader
-        title={firstName ? `Welcome back, ${firstName}` : "Overview"}
-        description="What's paid, what's waiting, and what needs you."
-        actions={<Tabs label="Period" tabs={PERIODS.map((p) => ({ value: p.value, label: p.label }))} value={period} onChange={setPeriod} />}
-      />
-
+      {banner}
       {isEmpty ? (
-        <Card>
+        <div className="border border-line/70 bg-paper">
           <EmptyState
             icon={<ShoppingBag className="size-6" aria-hidden />}
             title="Create your first payment link"
@@ -68,31 +105,29 @@ export default function OverviewPage() {
               </ButtonLink>
             }
           />
-        </Card>
+        </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric label="Confirmed payments" value={formatNaira(o.confirmedVolumeMinor)} detail={`${o.confirmedPaymentCount} verified in the last ${PERIODS.find((p) => p.value === period)?.label}`} href="/dashboard/transactions?status=confirmed" />
-            <Metric label="Awaiting payment" value={String(o.awaitingPayment.count)} detail={`${formatNaira(o.awaitingPayment.valueMinor)} in open links`} href="/dashboard/orders?view=awaiting_payment" />
-            <Metric label="Paid, ready to fulfil" value={String(o.paidAwaitingFulfilment)} detail="Safe to ship" href="/dashboard/orders?view=to_fulfil" />
-            <Metric label="Needs review" value={String(o.needsReview)} detail="Hold these before shipping" href="/dashboard/orders?view=needs_review" tone={o.needsReview ? "alert" : "default"} />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric tone="forest" label="Confirmed payments" value={formatNaira(o.confirmedVolumeMinor)} detail={`${o.confirmedPaymentCount} verified in the last ${periodLabel}`} href="/dashboard/transactions?status=confirmed" />
+            <Metric tone="amber" label="Awaiting payment" value={String(o.awaitingPayment.count)} detail={`${formatNaira(o.awaitingPayment.valueMinor)} in open links · don't ship yet`} href="/dashboard/orders?view=awaiting_payment" />
+            <Metric tone="mint" label="Paid, ready to fulfil" value={String(o.paidAwaitingFulfilment)} detail="Safe to ship" href="/dashboard/orders?view=to_fulfil" />
+            <Metric tone="red" label="Needs review" value={String(o.needsReview)} detail="Hold these before shipping" href="/dashboard/orders?view=needs_review" />
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <Card>
-              <CardHeader
-                title="Recent payments"
-                action={
-                  <Link href="/dashboard/transactions" className="text-sm font-semibold text-ink hover:underline">
-                    All transactions
-                  </Link>
-                }
-              />
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <section className="border border-line/70 bg-paper" aria-labelledby="recent-title">
+              <div className="flex items-center justify-between gap-3 px-5 pt-5 sm:px-6">
+                <h2 id="recent-title" className="text-base font-semibold">Recent payments</h2>
+                <Link href="/dashboard/transactions" className="text-sm font-semibold text-ink hover:underline">
+                  All transactions
+                </Link>
+              </div>
               {o.recentTransactions.length ? (
-                <ul className="mt-2 divide-y divide-line">
+                <ul className="mt-3 divide-y divide-line">
                   {o.recentTransactions.map((t) => (
                     <li key={t.id}>
-                      <Link href={`/dashboard/transactions/${t.id}`} className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-ivory/50 sm:px-6">
+                      <Link href={`/dashboard/transactions/${t.id}`} className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-ivory/60 sm:px-6">
                         <div className="min-w-0">
                           <p className="font-semibold">{t.order?.reference ?? "Order"}</p>
                           <p className="truncate text-sm text-muted">{t.routeLabel} · {formatRelative(t.confirmedAt ?? t.createdAt)}</p>
@@ -108,18 +143,18 @@ export default function OverviewPage() {
               ) : (
                 <p className="px-6 py-6 text-sm text-muted">No payments started yet.</p>
               )}
-            </Card>
+            </section>
 
-            <Card className="h-fit p-5 sm:p-6">
-              <h2 className="text-base font-semibold">Pending settlement</h2>
-              <p className="tabular mt-2 text-2xl font-bold">{formatNaira(o.pendingSettlement.netMinor)}</p>
-              <p className="mt-1 text-sm text-muted">
+            <Link href="/dashboard/settlements" className={cn("group flex h-fit flex-col p-5 transition-[filter] hover:brightness-[0.97] sm:p-6", TILE.sky.box)}>
+              <p className="text-sm font-semibold text-sky-ink/80">Pending settlement</p>
+              <p className="tabular mt-3 text-3xl font-bold tracking-tight">{formatNaira(o.pendingSettlement.netMinor)}</p>
+              <p className="mt-1 text-sm text-sky-ink/90">
                 Net of fees across {o.pendingSettlement.count} confirmed {o.pendingSettlement.count === 1 ? "payment" : "payments"} not yet paid out. This is not money in your bank yet.
               </p>
-              <Link href="/dashboard/settlements" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold hover:underline">
-                Settlements <ArrowRight className="size-3.5" aria-hidden />
-              </Link>
-            </Card>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold">
+                Settlements <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              </span>
+            </Link>
           </div>
         </>
       )}
